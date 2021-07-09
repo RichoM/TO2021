@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace TradingRoutesSimulation
 {
-    // NOTE(Richo): A* algorithm from https://www.redblobgames.com/pathfinding/a-star/introduction.html
+    // NOTE(Richo): Dijkstra's algorithm from https://www.redblobgames.com/pathfinding/a-star/introduction.html
     public class Pathfinding
     {
         readonly TerrainType[,] map;
@@ -22,7 +22,7 @@ namespace TradingRoutesSimulation
             height = map.GetUpperBound(1) + 1;
         }
 
-        public TravelMap CalculateMap(Point start, Point goal)
+        public TravelMap CalculateMap(Point start)
         {
             var frontier = new SimplePriorityQueue<Point, double>();
             frontier.Enqueue(start, 0);
@@ -32,14 +32,13 @@ namespace TradingRoutesSimulation
             while (frontier.Count > 0)
             {
                 var current = frontier.Dequeue();
-                if (current == goal) break; // Early exit
 
                 foreach (var next in GetNeighbours(current))
                 {
                     var cost = travelMap.Get(current).Cost + GetTravelCost(next);
                     if (!travelMap.Contains(next))
                     {
-                        Enqueue(frontier, next, goal, cost);
+                        Enqueue(frontier, next, cost);
                         travelMap.Set(next, new TravelMap.Node()
                         {
                             Previous = current,
@@ -53,7 +52,7 @@ namespace TradingRoutesSimulation
                         {
                             node.Previous = current;
                             node.Cost = cost;
-                            Enqueue(frontier, next, goal, cost);
+                            Enqueue(frontier, next, cost);
                         }
                     }
                 }
@@ -63,18 +62,18 @@ namespace TradingRoutesSimulation
 
         public IEnumerable<Point> GetPath(Point start, Point goal)
         {
-            return CalculateMap(start, goal).GetPath(goal);
+            return CalculateMap(start).GetPath(goal);
         }
 
-        private void Enqueue(SimplePriorityQueue<Point, double> frontier, Point next, Point goal, double cost)
+        private void Enqueue(SimplePriorityQueue<Point, double> frontier, Point next, double cost)
         {
             if (frontier.Contains(next))
             {
-                frontier.UpdatePriority(next, cost + GetHeuristic(next, goal));
+                frontier.UpdatePriority(next, cost);
             }
             else
             {
-                frontier.Enqueue(next, cost + GetHeuristic(next, goal));
+                frontier.Enqueue(next, cost);
             }
         }
 
@@ -112,11 +111,6 @@ namespace TradingRoutesSimulation
 
                 default: return 1000;
             }
-        }
-
-        private double GetHeuristic(Point p1, Point p2)
-        {
-            return p1.Dist(p2);
         }
     }
 }

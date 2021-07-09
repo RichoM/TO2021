@@ -38,6 +38,8 @@ namespace TradingRoutesSimulation
         Point capitalCity;
         Merchant[] merchants;
 
+        TravelMap travelMap;
+
         public Form1()
         {
             InitializeComponent();
@@ -55,6 +57,10 @@ namespace TradingRoutesSimulation
             InitMap();
             InitCapitalCity();
             InitMerchants();
+
+            var pathfinding = new Pathfinding(map);
+            travelMap = pathfinding.CalculateMap(capitalCity);
+
             background = DrawBackground();
         }
 
@@ -134,6 +140,7 @@ namespace TradingRoutesSimulation
 
             var data = bmp.LockBits(new Rectangle(0, 0, bmp.Width, bmp.Height),
                 ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+            var maxCost = travelMap.MaxCost;
             unsafe
             {
                 byte* ptr = (byte*)data.Scan0;
@@ -145,8 +152,20 @@ namespace TradingRoutesSimulation
                     for (int x = 0; x < w; x++)
                     {
                         int* color = row++;
+                        
                         var terrain = map[x, y];
                         *color = terrainColors[terrain].ToArgb();
+
+                        /*
+                        var node = travelMap.Get(new Point(x, y));
+                        if (node != null)
+                        {
+                            var cost = node.Cost;
+                            var cost_normalized = 1 - cost / maxCost;
+                            var red = cost_normalized * 255;
+                            *color = Color.FromArgb((int)red, 0, 0).ToArgb();
+                        }
+                        */
                     }
                     ptr += data.Stride;
                 }
@@ -158,10 +177,11 @@ namespace TradingRoutesSimulation
 
         private void updateTimer_Tick(object sender, EventArgs e)
         {
-            foreach (var merchant in merchants)
+            Parallel.For(0, merchants.Length, i =>
             {
-                merchant.UpdateOn(map);
-            }
+                var merchant = merchants[i];
+                merchant.UpdateOn(map, travelMap);
+            });
             Refresh();
         }
     }

@@ -16,24 +16,37 @@ namespace TradingRoutesSimulation
 
         public bool GoingToCapital = true;
 
+        IEnumerable<Point> path;
+
         public Merchant(Point position, Point capital)
         {
             Town = Position = position;
             CapitalCity = capital;
         }
 
-        public void UpdateOn(TerrainType[,] map)
+        public void UpdateOn(TerrainType[,] map, TravelMap travelMap)
         {
             Point target = GoingToCapital ? CapitalCity : Town;
-            var pathfinder = new Pathfinding(map);
-            var path = pathfinder.GetPath(Position, target).Skip(1);
-            if (path.Any())
+            if (path == null)
             {
-                Position = path.First();
+                if (GoingToCapital)
+                {
+                    path = travelMap.GetPath(Position).Reverse();
+                }
+                else
+                {
+                    path = travelMap.GetPath(Town);
+                }
+            }
+            var actualPath = path.SkipWhile(p => p != Position).Skip(1);
+            if (actualPath.Any())
+            {
+                Position = actualPath.First();
             }
             else
             {
                 GoingToCapital = !GoingToCapital;
+                path = path.Reverse();
             }
         }
     }

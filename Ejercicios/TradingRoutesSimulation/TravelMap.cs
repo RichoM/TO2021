@@ -57,5 +57,24 @@ namespace TradingRoutesSimulation
                 && p.Y >= 0 && p.Y < height
                 && map[p.X, p.Y] != null;
         }
+
+        public double MaxCost
+        {
+            get
+            {
+                double result = 0;
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        if (map[x, y]?.Cost > result)
+                        {
+                            result = map[x, y].Cost;
+                        }
+                    }
+                }
+                return result;
+            }
+        }
     }
 }
